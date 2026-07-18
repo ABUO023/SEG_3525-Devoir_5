@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Activity,
@@ -38,9 +38,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  drivers,
-  featuredDrivers,
-  session,
+  races,
   type Driver,
   type PacePoint,
 } from "@/lib/race-data";
@@ -52,19 +50,17 @@ const translations = {
   en: {
     skip: "Skip to dashboard",
     homeLabel: "Pitwall dashboard home",
-    circuitGraphic: "Abstract outline of Yas Marina Circuit",
+    circuitGraphic: "Circuit map of",
     brandSub: "F1 data lab",
     navOverview: "Race analysis",
-    sourceStatus: "Verified OpenF1 snapshot",
     langLabel: "Choose display language",
-    eyebrow: "2025 season finale / Race 24",
+    seasonRound: "2025 season / Round",
     titleLineOne: "Race pace,",
     titleLineTwo: "decoded.",
     intro:
-      "Explore how the leaders built their pace across 58 laps, then compare the field on the metrics that mattered at Yas Marina.",
-    event: "Abu Dhabi Grand Prix",
+      "Choose a race, explore how the quickest drivers built their pace, then compare the field on the metrics that mattered.",
+    chooseRace: "Choose a race",
     race: "Race",
-    location: "Yas Marina Circuit",
     selectedDriver: "Selected driver",
     fastestLap: "Fastest lap",
     topSpeed: "Top speed",
@@ -100,9 +96,10 @@ const translations = {
     designNote:
       "Pit-out laps, missing times and laps above 110 seconds are excluded. The pace trace is sampled at five-lap intervals to keep the trend clear.",
     source: "Data source",
-    sourceLink: "OpenF1 API — session 9839",
+    sourceLink: "OpenF1 API — session",
     sourceDetail:
       "Historical race data. OpenF1 is unofficial and is not associated with Formula 1 companies.",
+    mapSource: "Circuit artwork",
     footer: "Built for informed race fans.",
     english: "English",
     french: "Français",
@@ -110,19 +107,17 @@ const translations = {
   fr: {
     skip: "Aller au tableau de bord",
     homeLabel: "Accueil du tableau de bord Pitwall",
-    circuitGraphic: "Tracé abstrait du circuit de Yas Marina",
+    circuitGraphic: "Carte du circuit de",
     brandSub: "Laboratoire de données F1",
     navOverview: "Analyse de course",
-    sourceStatus: "Instantané OpenF1 vérifié",
     langLabel: "Choisir la langue d'affichage",
-    eyebrow: "Finale 2025 / Course 24",
+    seasonRound: "Saison 2025 / Manche",
     titleLineOne: "Le rythme de course,",
     titleLineTwo: "décodé.",
     intro:
-      "Explorez comment les meneurs ont construit leur rythme sur 58 tours, puis comparez le peloton selon les mesures clés à Yas Marina.",
-    event: "Grand Prix d'Abou Dabi",
+      "Choisissez une course, explorez comment les pilotes les plus rapides ont construit leur rythme, puis comparez le peloton selon les mesures clés.",
+    chooseRace: "Choisir une course",
     race: "Course",
-    location: "Circuit de Yas Marina",
     selectedDriver: "Pilote sélectionné",
     fastestLap: "Tour le plus rapide",
     topSpeed: "Vitesse maximale",
@@ -158,9 +153,10 @@ const translations = {
     designNote:
       "Les tours de sortie, les temps manquants et les tours de plus de 110 secondes sont exclus. La trace du rythme est échantillonnée tous les cinq tours pour clarifier la tendance.",
     source: "Source des données",
-    sourceLink: "API OpenF1 — session 9839",
+    sourceLink: "API OpenF1 — session",
     sourceDetail:
       "Données historiques de course. OpenF1 est non officiel et n'est pas associé aux entreprises de Formule 1.",
+    mapSource: "Illustration du circuit",
     footer: "Conçu pour les passionnés de course.",
     english: "English",
     french: "Français",
@@ -187,13 +183,13 @@ function formatDecimal(value: number, locale: Locale, digits = 3) {
   }).format(value);
 }
 
-function formatDate(locale: Locale) {
+function formatDate(locale: Locale, date: string) {
   return new Intl.DateTimeFormat(locale === "fr" ? "fr-CA" : "en-CA", {
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(session.date));
+  }).format(new Date(date));
 }
 
 type PaceTooltipProps = {
@@ -280,33 +276,52 @@ function Stat({
 
 export function RaceDashboard() {
   const [locale, setLocale] = useState<Locale>("en");
-  const [selectedDriverNumber, setSelectedDriverNumber] = useState(4);
+  const [selectedRaceSlug, setSelectedRaceSlug] = useState(races[0].slug);
+  const [selectedDriverNumber, setSelectedDriverNumber] = useState(
+    races[0].drivers[0].number,
+  );
   const [metric, setMetric] = useState<Metric>("bestLap");
   const t = translations[locale];
+  const selectedRace =
+    races.find((race) => race.slug === selectedRaceSlug) ?? races[0];
+  const drivers = selectedRace.drivers;
+  const featuredDrivers = drivers.slice(0, 4);
   const selectedDriver =
-    drivers.find((driver) => driver.number === selectedDriverNumber) ?? drivers[2];
+    drivers.find((driver) => driver.number === selectedDriverNumber) ?? drivers[0];
+  const raceName = selectedRace.name[locale];
+  const circuitName = selectedRace.circuit[locale];
+
+  function handleRaceChange(slug: string) {
+    const nextRace = races.find((race) => race.slug === slug) ?? races[0];
+    setSelectedRaceSlug(nextRace.slug);
+    setSelectedDriverNumber(nextRace.drivers[0].number);
+  }
 
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const paceDomain = useMemo(() => {
-    let minimum = Number.POSITIVE_INFINITY;
-    let maximum = Number.NEGATIVE_INFINITY;
-    for (const point of selectedDriver.pace) {
-      minimum = Math.min(minimum, point.time);
-      maximum = Math.max(maximum, point.time);
-    }
-    return [Math.floor(minimum - 0.4), Math.ceil(maximum + 0.4)];
-  }, [selectedDriver]);
+  const paceTimes = selectedDriver.pace.map((point) => point.time);
+  const paceDomain = [
+    Math.floor(Math.min(...paceTimes) - 0.4),
+    Math.ceil(Math.max(...paceTimes) + 0.4),
+  ];
 
-  const comparisonData = useMemo(
-    () =>
-      [...drivers].sort((a, b) =>
-        metric === "topSpeed" ? b[metric] - a[metric] : a[metric] - b[metric],
-      ),
-    [metric],
+  const comparisonData = [...drivers].sort((a, b) =>
+    metric === "topSpeed" ? b[metric] - a[metric] : a[metric] - b[metric],
   );
+
+  const comparisonValues = drivers.map((driver) => driver[metric]);
+  const comparisonMinimum = Math.min(...comparisonValues);
+  const comparisonMaximum = Math.max(...comparisonValues);
+  const comparisonPadding =
+    metric === "topSpeed"
+      ? Math.max(5, (comparisonMaximum - comparisonMinimum) * 0.15)
+      : Math.max(0.5, (comparisonMaximum - comparisonMinimum) * 0.15);
+  const comparisonDomain = [
+    Math.floor(comparisonMinimum - comparisonPadding),
+    Math.ceil(comparisonMaximum + comparisonPadding),
+  ];
 
   const fastestOverall = drivers[0].bestLap;
   const deltaToFastest = selectedDriver.bestLap - fastestOverall;
@@ -337,9 +352,6 @@ export function RaceDashboard() {
           <div className="hidden items-center gap-2 text-xs font-medium text-muted-foreground md:flex">
             <Activity aria-hidden="true" className="size-4 text-primary" />
             <span>{t.navOverview}</span>
-            <span aria-hidden="true" className="mx-1 text-border">/</span>
-            <Database aria-hidden="true" className="size-3.5" />
-            <span>{t.sourceStatus}</span>
           </div>
 
           <div
@@ -378,7 +390,7 @@ export function RaceDashboard() {
             <div>
               <Badge variant="outline" className="mb-6 bg-transparent">
                 <Flag aria-hidden="true" className="size-3" />
-                {t.eyebrow}
+                {t.seasonRound} {selectedRace.round}
               </Badge>
               <h1 className="max-w-4xl text-balance text-[clamp(3.25rem,8vw,7rem)] font-black leading-[0.82] tracking-[-0.075em]">
                 {t.titleLineOne}
@@ -387,47 +399,68 @@ export function RaceDashboard() {
               <p className="mt-7 max-w-2xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
                 {t.intro}
               </p>
+              <div className="mt-7">
+                <span className="mb-2 block text-[0.6875rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                  {t.chooseRace}
+                </span>
+                <SegmentControl label={t.chooseRace}>
+                  {races.map((race) => (
+                    <Button
+                      key={race.slug}
+                      size="sm"
+                      variant={selectedRaceSlug === race.slug ? "inverse" : "ghost"}
+                      aria-pressed={selectedRaceSlug === race.slug}
+                      onClick={() => handleRaceChange(race.slug)}
+                      className="whitespace-nowrap"
+                    >
+                      {race.label[locale]}
+                    </Button>
+                  ))}
+                </SegmentControl>
+              </div>
               <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm">
                 <div className="flex items-center gap-2 font-semibold">
                   <CalendarDays aria-hidden="true" className="size-4 text-primary" />
-                  {formatDate(locale)}
+                  {formatDate(locale, selectedRace.date)}
                 </div>
                 <div className="flex items-center gap-2 font-semibold">
                   <MapPin aria-hidden="true" className="size-4 text-primary" />
-                  {t.location}
+                  {circuitName}
                 </div>
                 <Badge variant="muted">{t.race}</Badge>
               </div>
             </div>
 
-            <div className="track-panel relative min-h-[320px] overflow-hidden rounded-2xl bg-foreground p-7 text-background sm:p-9">
+            <div className="track-panel relative min-h-[320px] overflow-hidden rounded-2xl border border-border bg-card p-7 text-foreground sm:p-9">
               <div className="relative z-10 flex items-start justify-between gap-4">
                 <div>
-                  <span className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-background/55">
-                    {t.event}
+                  <span className="text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    {raceName}
                   </span>
                   <p className="mt-2 max-w-[12rem] text-2xl font-bold tracking-[-0.04em]">
-                    {t.location}
+                    {circuitName}
                   </p>
                 </div>
-                <span className="font-mono text-5xl font-medium text-primary">{session.laps}</span>
+                <span className="font-mono text-5xl font-medium text-primary">
+                  {selectedRace.laps}
+                </span>
               </div>
-              <div className="relative z-10 mt-5 h-[230px] overflow-hidden sm:h-[260px]">
+              <div className="circuit-map-frame relative z-10 mt-5 h-[230px] overflow-hidden rounded-lg border border-border/70 sm:h-[260px]">
                 <Image
-                  src="/yas.webp"
-                  alt={t.circuitGraphic}
+                  src={selectedRace.image}
+                  alt={`${t.circuitGraphic} ${circuitName}`}
                   fill
                   priority
                   sizes="(max-width: 1024px) calc(100vw - 3rem), 34rem"
-                  className="object-contain object-center mix-blend-lighten"
+                  className="object-contain object-center p-3 sm:p-4"
                 />
               </div>
-              <div className="relative z-10 mt-5 flex items-center justify-between border-t border-background/15 pt-5 text-xs">
-                <span className="text-background/55">{t.laps}</span>
-                <span className="font-mono">SESSION / {session.key}</span>
+              <div className="relative z-10 mt-5 flex items-center justify-between border-t border-border pt-5 text-xs">
+                <span className="text-muted-foreground">{t.laps}</span>
+                <span className="font-mono">SESSION / {selectedRace.key}</span>
               </div>
-              <span className="absolute -bottom-12 -right-3 font-mono text-[10rem] font-medium leading-none text-background/[0.035]">
-                24
+              <span className="absolute -bottom-12 -right-3 font-mono text-[10rem] font-medium leading-none text-foreground/[0.035]">
+                {selectedRace.round}
               </span>
             </div>
           </div>
@@ -626,7 +659,7 @@ export function RaceDashboard() {
                       />
                       <XAxis
                         type="number"
-                        domain={metric === "topSpeed" ? [300, 350] : [86, 91]}
+                        domain={comparisonDomain}
                         axisLine={false}
                         tickLine={false}
                         tickMargin={10}
@@ -754,10 +787,34 @@ export function RaceDashboard() {
                     rel="noreferrer"
                     className="mt-2 inline-flex items-center gap-2 font-semibold underline decoration-border underline-offset-4 transition-colors hover:text-primary"
                   >
-                    {t.sourceLink}
+                    {t.sourceLink} {selectedRace.key}
                     <ArrowUpRight aria-hidden="true" className="size-4" />
                   </a>
                   <CardDescription className="pt-1">{t.sourceDetail}</CardDescription>
+                  <div className="mt-4 border-t border-border pt-4 text-xs text-muted-foreground">
+                    <span className="block font-bold uppercase tracking-[0.12em]">
+                      {t.mapSource}
+                    </span>
+                    <p className="mt-1 leading-5">
+                      <a
+                        href={selectedRace.mapUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-border underline-offset-4 transition-colors hover:text-primary"
+                      >
+                        {selectedRace.mapCredit}
+                      </a>{" "}
+                      ·{" "}
+                      <a
+                        href={selectedRace.licenseUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-border underline-offset-4 transition-colors hover:text-primary"
+                      >
+                        {selectedRace.license}
+                      </a>
+                    </p>
+                  </div>
                 </CardHeader>
               </Card>
             </div>

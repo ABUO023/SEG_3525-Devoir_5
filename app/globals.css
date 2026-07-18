@@ -115,7 +115,11 @@ a {
   right: 0;
   width: 42%;
   height: 1px;
-  background: color-mix(in oklab, var(--background) 30%, transparent);
+  background: var(--border);
+}
+
+.circuit-map-frame {
+  background: var(--background);
 }
 
 .motorsport-mark {

@@ -1,0 +1,174 @@
+@page {
+  size: A4;
+  margin: 18mm 17mm 18mm;
+}
+
+html {
+  background: transparent;
+}
+
+body {
+  box-sizing: border-box;
+  max-width: 210mm;
+  margin: 0 auto;
+  background: transparent;
+  color: #24211f;
+  font-family: "Aptos", "Helvetica Neue", Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.48;
+}
+
+header#title-block-header {
+  position: relative;
+  min-height: 86mm;
+  margin: 0 0 12mm;
+  padding: 30mm 14mm 16mm;
+  border-bottom: 1.5pt solid #24211f;
+  background: transparent;
+}
+
+header#title-block-header::before {
+  position: absolute;
+  top: 15mm;
+  left: 14mm;
+  color: #b42318;
+  content: "SEG3525 / DESIGN REPORT";
+  font-size: 8pt;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+h1.title {
+  max-width: 145mm;
+  margin: 0;
+  font-size: 34pt;
+  font-weight: 850;
+  letter-spacing: -0.045em;
+  line-height: 0.95;
+}
+
+p.subtitle {
+  max-width: 130mm;
+  margin: 5mm 0 15mm;
+  color: #b42318;
+  font-size: 16pt;
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+p.author,
+p.date {
+  margin: 1.5mm 0 0;
+  color: #6f6761;
+  font-size: 9.5pt;
+}
+
+h2 {
+  margin: 10mm 0 4mm;
+  padding-top: 3mm;
+  border-top: 1.25pt solid #24211f;
+  color: #24211f;
+  font-size: 19pt;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  page-break-after: avoid;
+}
+
+h2::first-letter {
+  color: #b42318;
+}
+
+h3 {
+  margin: 6mm 0 2mm;
+  color: #b42318;
+  font-size: 11pt;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  page-break-after: avoid;
+}
+
+p {
+  margin: 0 0 3mm;
+  orphans: 3;
+  widows: 3;
+  page-break-inside: avoid;
+}
+
+strong {
+  color: #24211f;
+}
+
+a {
+  color: #b42318;
+  text-decoration: none;
+  border-bottom: 0.5pt solid #d59a92;
+}
+
+ul {
+  margin: 2mm 0 4mm;
+  padding-left: 5mm;
+}
+
+li {
+  margin: 0 0 1.5mm;
+  padding-left: 1mm;
+}
+
+li::marker {
+  color: #b42318;
+}
+
+table {
+  width: 100%;
+  margin: 3mm 0 6mm;
+  border-collapse: collapse;
+  page-break-inside: avoid;
+}
+
+th,
+td {
+  padding: 2.5mm 3mm;
+  border-bottom: 0.6pt solid #d9d0c8;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  width: 34%;
+  background: transparent;
+  color: #6f6761;
+  font-size: 8pt;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+code {
+  background: transparent;
+  padding: 0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 8.7pt;
+}
+
+em {
+  color: #6f6761;
+}
+
+@media print {
+  html,
+  body {
+    background: transparent;
+  }
+
+  body {
+    max-width: none;
+  }
+
+  h2,
+  h3,
+  table,
+  ul {
+    break-inside: avoid;
+  }
+}
